@@ -1,0 +1,58 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/frankenphp/Dockerfile
+      target: dev
+    container_name: ${PROJECT_NAME:-generateu}_app
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    volumes:
+      - ./:/app:delegated
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      APP_ENV: dev
+      APP_DEBUG: "1"
+      APP_SECRET: ${APP_SECRET:-changeThisDevSecret123}
+      DATABASE_URL: postgresql://${DB_USER:-app}:${DB_PASS:-app}@database:5432/${DB_NAME:-app}?serverVersion=16
+      MAILER_DSN: smtp://mailpit:1025
+      MERCURE_URL: http://localhost:8080/.well-known/mercure
+      MERCURE_PUBLIC_URL: http://localhost:8080/.well-known/mercure
+      MERCURE_JWT_SECRET: ${MERCURE_JWT_SECRET:-!GenerateuDevSecretKey!}
+      FRANKENPHP_WORKERS: 4
+      XDEBUG_MODE: ${XDEBUG_MODE:-off}
+    depends_on:
+      database:
+        condition: service_healthy
+
+  database:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: ${PROJECT_NAME:-generateu}_db
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    environment:
+      POSTGRES_DB: ${DB_NAME:-app}
+      POSTGRES_USER: ${DB_USER:-app}
+      POSTGRES_PASSWORD: ${DB_PASS:-app}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-app}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: ${PROJECT_NAME:-generateu}_mailpit
+    ports:
+      - "${MAILPIT_PORT:-8025}:8025"
+      - "1025:1025"
+    environment:
+      MP_MAX_MESSAGES: 5000
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:

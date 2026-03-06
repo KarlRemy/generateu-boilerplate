@@ -1,0 +1,73 @@
+# Template de projet Generateu
+# Ce fichier definit la structure d'un nouveau projet genere a partir du boilerplate.
+# Utilise par la commande /create-project pour generer automatiquement
+# les entites, controllers, templates et features.
+#
+# Types de champs supportes :
+#   string (length), text, integer, decimal (precision, scale),
+#   boolean (default), datetime, date, float, json, array
+#
+# Types de relations :
+#   ManyToOne, OneToMany, ManyToMany, OneToOne
+#
+# Types de templates :
+#   landing  - Page d'accueil / hero section
+#   list     - Liste avec pagination et filtres
+#   detail   - Page de detail d'un element
+#   form     - Formulaire de creation/edition
+#   dashboard - Tableau de bord avec widgets
+#
+# Features disponibles :
+#   auth       - Systeme d'authentification (deja dans le boilerplate)
+#   admin      - Panel d'administration (deja dans le boilerplate)
+#   api        - Endpoints API Platform pour les entites avec api: true
+#   search     - Barre de recherche sur les pages de listes
+#   export_csv - Bouton d'export CSV sur les listes
+#   import_csv - Import de donnees depuis un CSV
+#   slug       - Generation automatique de slugs
+#   soft_delete - Suppression logique (champ deletedAt)
+
+project:
+  name: mon-saas
+  description: "Description du projet"
+
+entities:
+  - name: Product
+    fields:
+      - { name: name, type: string, length: 255 }
+      - { name: price, type: decimal, precision: 10, scale: 2 }
+      - { name: description, type: text, nullable: true }
+      - { name: isActive, type: boolean, default: true }
+    timestamps: true
+    api: true
+
+  - name: Category
+    fields:
+      - { name: name, type: string, length: 100 }
+      - { name: slug, type: string, length: 100, unique: true }
+
+relations:
+  - { from: Product, to: Category, type: ManyToOne }
+
+pages:
+  - name: home
+    route: /
+    template: landing
+    description: "Page d'accueil avec hero section"
+
+  - name: products
+    route: /products
+    template: list
+    description: "Liste des produits avec filtres"
+
+  - name: product_show
+    route: /product/{slug}
+    template: detail
+    description: "Detail d'un produit"
+
+features:
+  - auth        # Deja dans le boilerplate
+  - admin       # Deja dans le boilerplate
+  - api         # API Platform endpoints pour les entites avec api: true
+  - search      # Barre de recherche sur les listes
+  - export_csv  # Export de donnees en CSV

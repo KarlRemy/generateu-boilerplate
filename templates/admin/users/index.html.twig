@@ -1,0 +1,14 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}Utilisateurs{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-lg border border-gray-200">
+    <div class="px-5 py-4 border-b border-gray-200">
+        <h2 class="text-base font-semibold text-gray-900">Gestion des utilisateurs</h2>
+    </div>
+    <div class="p-5">
+        {{ render_datatable(datatable) }}
+    </div>
+</div>
+{% endblock %}

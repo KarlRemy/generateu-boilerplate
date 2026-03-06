@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Generateu{% endblock %}</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+    {% block stylesheets %}{% endblock %}
+    {% block javascripts %}
+        {% block importmap %}{{ importmap('app') }}{% endblock %}
+    {% endblock %}
+</head>
+<body class="h-full bg-gray-50 text-gray-900 antialiased">
+    <div class="min-h-full flex flex-col">
+        {% block header %}
+            {% include 'partials/_navbar.html.twig' %}
+        {% endblock %}
+
+        {% block flash_messages %}
+            {% include 'partials/_flash.html.twig' %}
+        {% endblock %}
+
+        <main class="flex-grow">
+            {% block body %}{% endblock %}
+        </main>
+
+        {% block footer %}
+            {% include 'partials/_footer.html.twig' %}
+        {% endblock %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,15 @@
+.git
+.github
+.claude
+docs
+infra
+node_modules
+var/cache
+var/log
+vendor
+.env.local
+.env.*.local
+docker-compose*.yml
+Caddyfile
+*.md
+!README.md

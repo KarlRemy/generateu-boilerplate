@@ -1,0 +1,31 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Accueil{% endblock %}
+
+{% block body %}
+<div class="relative isolate overflow-hidden">
+    <div class="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8">
+        <div class="mx-auto max-w-2xl text-center">
+            <h1 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
+                Bienvenue sur <span class="text-indigo-600">Generateu</span>
+            </h1>
+            <p class="mt-6 text-lg leading-8 text-gray-600">
+                Application generee automatiquement avec le boilerplate Generateu.
+                Auth complete, admin panel, API Platform et Mercure prets a l'emploi.
+            </p>
+            <div class="mt-10 flex items-center justify-center gap-x-6">
+                {% if app.user %}
+                    <span class="text-sm text-gray-500">Connecte en tant que {{ app.user.email }}</span>
+                {% else %}
+                    <a href="{{ path('app_register') }}" class="rounded-md bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition-colors">
+                        Commencer
+                    </a>
+                    <a href="{{ path('app_login') }}" class="text-sm font-semibold leading-6 text-gray-900">
+                        Se connecter <span aria-hidden="true">&rarr;</span>
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

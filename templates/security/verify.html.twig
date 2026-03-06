@@ -1,0 +1,42 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Verification{% endblock %}
+
+{% block body %}
+<div class="flex min-h-[calc(100vh-12rem)] items-center justify-center px-4">
+    <div class="w-full max-w-md">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+            <div class="text-center mb-8">
+                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 mb-4">
+                    <svg class="h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900">Verificez votre email</h2>
+                <p class="mt-2 text-sm text-gray-600">
+                    Un code a 6 chiffres a ete envoye a<br>
+                    <strong class="text-gray-900">{{ email }}</strong>
+                </p>
+            </div>
+
+            {{ form_start(form, {'attr': {'class': 'space-y-6'}}) }}
+                <div class="flex justify-center">
+                    <div class="w-48">
+                        {{ form_widget(form.code) }}
+                    </div>
+                </div>
+                {{ form_errors(form.code, {'attr': {'class': 'text-center text-sm text-red-600'}}) }}
+
+                <button type="submit" class="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 transition-colors">
+                    Verifier
+                </button>
+            {{ form_end(form) }}
+
+            <p class="mt-6 text-center text-sm text-gray-500">
+                Vous n'avez pas recu le code ?
+                <a href="{{ path('app_verify_resend') }}" class="font-medium text-indigo-600 hover:text-indigo-500">Renvoyer</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

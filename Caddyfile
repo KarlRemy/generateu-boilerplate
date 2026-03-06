@@ -1,0 +1,52 @@
+{
+	frankenphp {
+		worker {
+			file ./public/index.php
+			num 4
+			env APP_RUNTIME Runtime\FrankenPhpSymfony\Runtime
+			watch ./src/**/*.php
+			watch ./config/**/*.yaml
+			watch ./templates/**/*.twig
+		}
+	}
+
+	# Dev: no HTTPS
+	auto_https off
+	http_port 8080
+}
+
+:8080 {
+	root * ./public
+
+	encode zstd gzip
+
+	# Security headers
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+
+	# Mercure hub
+	mercure {
+		anonymous
+		publisher_jwt {env.MERCURE_JWT_SECRET}
+		subscriber_jwt {env.MERCURE_JWT_SECRET}
+		cors_origins http://localhost:8080
+	}
+
+	# Static assets with cache
+	@static {
+		file
+		path *.css *.js *.ico *.jpg *.jpeg *.png *.svg *.gif *.webp *.woff *.woff2 *.ttf *.eot
+	}
+	handle @static {
+		header Cache-Control "public, max-age=86400"
+		file_server
+	}
+
+	php_server {
+		resolve_root_symlink false
+	}
+}

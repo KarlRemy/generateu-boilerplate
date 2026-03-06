@@ -1,0 +1,41 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block page_title %}Tables de la base de donnees{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-lg border border-gray-200">
+    <div class="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+        <h2 class="text-base font-semibold text-gray-900">{{ tables|length }} tables</h2>
+    </div>
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase">Table</th>
+                <th class="px-5 py-3 text-right text-xs font-medium text-gray-500 uppercase">Lignes</th>
+                <th class="px-5 py-3 text-right text-xs font-medium text-gray-500 uppercase">Action</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+            {% for table in tables %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-5 py-3">
+                    <a href="{{ path('app_admin_table_show', {tableName: table.name}) }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                        {{ table.name }}
+                    </a>
+                </td>
+                <td class="px-5 py-3 text-right">
+                    <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
+                        {{ table.rows }}
+                    </span>
+                </td>
+                <td class="px-5 py-3 text-right">
+                    <a href="{{ path('app_admin_table_show', {tableName: table.name}) }}" class="text-sm text-gray-500 hover:text-gray-700">
+                        Voir &rarr;
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
