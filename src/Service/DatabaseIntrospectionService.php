@@ -20,12 +20,13 @@ class DatabaseIntrospectionService
     {
         $tables = [];
         foreach ($this->schemaManager->listTableNames() as $tableName) {
+            $unquoted = trim($tableName, '"');
             $count = (int) $this->connection->executeQuery(
-                \sprintf('SELECT COUNT(*) FROM %s', $this->connection->quoteIdentifier($tableName))
+                \sprintf('SELECT COUNT(*) FROM %s', $this->connection->quoteIdentifier($unquoted))
             )->fetchOne();
 
             $tables[] = [
-                'name' => $tableName,
+                'name' => $unquoted,
                 'rows' => $count,
             ];
         }
@@ -37,8 +38,7 @@ class DatabaseIntrospectionService
     /** @return array{columns: array, rows: array} */
     public function getTableData(string $tableName, int $limit = 100): array
     {
-        // Validate table exists
-        $existingTables = $this->schemaManager->listTableNames();
+        $existingTables = array_map(fn($t) => trim($t, '"'), $this->schemaManager->listTableNames());
         if (!in_array($tableName, $existingTables, true)) {
             throw new \InvalidArgumentException(\sprintf('Table "%s" does not exist.', $tableName));
         }
@@ -47,7 +47,7 @@ class DatabaseIntrospectionService
         foreach ($this->schemaManager->listTableColumns($tableName) as $column) {
             $columns[] = [
                 'name' => $column->getName(),
-                'type' => $column->getType()->getName(),
+                'type' => strtolower(str_replace('Type', '', (new \ReflectionClass($column->getType()))->getShortName())),
                 'nullable' => !$column->getNotnull(),
             ];
         }
