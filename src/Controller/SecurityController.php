@@ -51,14 +51,16 @@ class SecurityController extends AbstractController
             return $this->redirectToRoute('app_home');
         }
 
-        $limiter = $registerLimiter->create($request->getClientIp());
-        if (!$limiter->consume()->isAccepted()) {
-            $this->addFlash('error', 'Trop de tentatives d\'inscription. Reessayez dans une heure.');
-            return $this->redirectToRoute('app_register');
-        }
-
         $form = $this->createForm(RegistrationFormType::class);
         $form->handleRequest($request);
+
+        $limiter = $registerLimiter->create($request->getClientIp());
+        if ($form->isSubmitted() && !$limiter->consume()->isAccepted()) {
+            $this->addFlash('error', 'Trop de tentatives d\'inscription. Reessayez dans une heure.');
+            return $this->render('security/register.html.twig', [
+                'form' => $form,
+            ]);
+        }
 
         if ($form->isSubmitted() && $form->isValid()) {
             $user = new User();

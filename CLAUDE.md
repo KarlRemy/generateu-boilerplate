@@ -24,9 +24,9 @@ Generateu est un boilerplate Symfony concu pour le deploiement rapide de projets
 
 ### Docker
 
-- **Dev** : `compose.yaml` + `compose.override.yaml` (PostgreSQL, Mercure, Mailpit)
+- **Dev** : `docker-compose.yml` (PostgreSQL, Mercure, Mailpit)
 - **Prod** : `docker-compose.prod.yml` (FrankenPHP worker mode, reseau `generateu_network`)
-- **Build multi-stage** : `docker/frankenphp/Dockerfile` avec target `prod`
+- **Build multi-stage** : `Dockerfile` avec targets `frankenphp_dev` et `frankenphp_prod`
 
 ### Infrastructure VPS
 
@@ -38,8 +38,8 @@ Generateu est un boilerplate Symfony concu pour le deploiement rapide de projets
 
 ### Caddyfile
 
-- `Caddyfile` : Configuration dev locale
-- `Caddyfile.prod` : Configuration production avec reverse proxy
+- `frankenphp/Caddyfile` : Configuration dev locale (worker mode + APP_RUNTIME)
+- `frankenphp/Caddyfile.prod` : Configuration production (securite, cache assets, Mercure)
 
 ## Structure du projet
 
@@ -55,15 +55,17 @@ generateu-symfony/
 │       ├── rate_limiter.yaml
 │       ├── security.yaml
 │       └── ...
-├── docker/
-│   └── frankenphp/          # Dockerfile multi-stage
 ├── docs/                    # Documentation (DNS, deploiement)
+├── frankenphp/
+│   ├── Caddyfile            # Config Caddy dev
+│   ├── Caddyfile.prod       # Config Caddy prod
+│   ├── conf.d/              # PHP ini configs (base, dev, prod)
+│   └── docker-entrypoint.sh # Entrypoint (vendor, migrations, tailwind)
 ├── infra/
-│   ├── caddy/               # Config Caddy prod
-│   ├── lib/
-│   │   ├── colors.sh        # Couleurs pour les scripts
-│   │   └── secrets.sh       # Gestion des secrets
-│   └── nginx/               # Config Nginx (legacy)
+│   ├── caddy/               # Config Caddy reverse proxy VPS
+│   └── lib/
+│       ├── colors.sh        # Couleurs pour les scripts
+│       └── secrets.sh       # Gestion des secrets
 ├── migrations/              # Migrations Doctrine
 ├── public/                  # Point d'entree web
 ├── src/
@@ -100,8 +102,8 @@ generateu-symfony/
 │   ├── partials/            # Composants reutilisables
 │   └── security/            # Login, register, verification
 ├── translations/            # Fichiers de traduction
-├── compose.yaml             # Docker Compose dev
-├── compose.override.yaml    # Overrides dev (ports, mailpit)
+├── Dockerfile               # Build multi-stage (frankenphp_dev, frankenphp_prod)
+├── docker-compose.yml       # Docker Compose dev
 ├── docker-compose.prod.yml  # Docker Compose production
 ├── Makefile                 # Commandes make
 └── importmap.php            # Asset Mapper importmap
@@ -164,13 +166,18 @@ Compte admin par defaut (fixtures) : `admin@example.com` / `password`
 
 ```
 infra/
-├── deploy.sh          # Premier deploiement d'un nouveau projet
-├── redeploy.sh        # Mise a jour d'un projet existant
-├── destroy.sh         # Suppression d'un projet
-├── caddy/             # Configuration Caddy production
+├── deploy.sh                   # Premier deploiement d'un nouveau projet
+├── redeploy.sh                 # Mise a jour d'un projet existant
+├── destroy.sh                  # Suppression d'un projet
+├── status.sh                   # Statut des projets deployes
+├── setup-vps.sh                # Configuration initiale du VPS
+├── docker-compose.shared.yml   # Services partages VPS (PostgreSQL, Mailpit)
+├── project-template.yaml       # Template YAML pour nouveaux projets
+├── caddy/                      # Config Caddy reverse proxy VPS
 └── lib/
-    ├── colors.sh      # Couleurs terminal
-    └── secrets.sh     # Gestion des secrets
+    ├── colors.sh               # Couleurs terminal
+    ├── secrets.sh              # Gestion des secrets
+    └── registry.sh             # Registre des projets deployes
 ```
 
 ### Skill /create-project
@@ -263,8 +270,8 @@ class Product
 
 ## URLs utiles en dev
 
-- **Application** : http://localhost:8080
-- **Mailpit** : http://localhost:8025
+- **Application** : http://localhost:8081
+- **Mailpit** : http://localhost:8026
 - **Mercure Hub** : Configurable dans `.env`
 
 ## Configuration cles
