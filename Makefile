@@ -2,9 +2,8 @@
 .PHONY: help start stop build install db-create db-migrate db-fixtures db-reset sf tailwind-watch test cc
 
 DC = docker compose
-EXEC = $(DC) exec app
-PHP = $(EXEC) php
-CONSOLE = $(PHP) bin/console
+EXEC = $(DC) exec php
+CONSOLE = $(EXEC) php bin/console
 
 ## —— Generateu Makefile ——————————————————————————
 
@@ -23,14 +22,22 @@ build: ## Build les containers
 	$(DC) build
 
 logs: ## Affiche les logs
-	$(DC) logs -f app
+	$(DC) logs -f php
 
 ## —— Symfony ————————————————————————————————————
 
 install: build start vendor db-reset tailwind-build ## Installation complete du projet
-	@echo "\n✅ Projet installe ! → http://localhost:8080"
-	@echo "📧 Mailpit → http://localhost:8025"
+	@echo "\n✅ Projet installe ! → http://localhost:8081"
+	@echo "📧 Mailpit → http://localhost:8026"
 	@echo "👤 Admin: admin@example.com / password"
+
+start-dev: build start vendor db-reset ## Lance tout l'environnement de dev en une commande
+	$(CONSOLE) tailwind:build
+	@echo "\n✅ Environnement de dev pret !"
+	@echo "🌐 App → http://localhost:8081"
+	@echo "📧 Mailpit → http://localhost:8026"
+	@echo "👤 Admin: admin@example.com / password"
+	@echo "💡 Lance 'make tailwind-watch' dans un autre terminal pour le hot-reload CSS"
 
 vendor: ## Installe les dependances PHP
 	$(EXEC) composer install
@@ -56,8 +63,10 @@ db-fixtures: ## Charge les fixtures
 	$(CONSOLE) doctrine:fixtures:load --no-interaction
 
 db-reset: db-create ## Reset complet de la BDD
+	$(DC) exec database psql -U app -d app -c "DROP EXTENSION IF EXISTS postgis_topology CASCADE; DROP EXTENSION IF EXISTS postgis CASCADE;"
 	$(CONSOLE) doctrine:schema:drop --force --full-database
-	$(CONSOLE) doctrine:migrations:migrate --no-interaction
+	$(DC) exec database psql -U app -d app -c "CREATE EXTENSION IF NOT EXISTS postgis; CREATE EXTENSION IF NOT EXISTS postgis_topology;"
+	$(CONSOLE) doctrine:migrations:migrate --no-interaction --allow-no-migration
 	$(CONSOLE) doctrine:fixtures:load --no-interaction
 
 ## —— Assets ————————————————————————————————————
@@ -71,7 +80,7 @@ tailwind-watch: ## Compile Tailwind CSS en mode watch
 ## —— Tests ————————————————————————————————————
 
 test: ## Lance les tests
-	$(PHP) bin/phpunit
+	$(EXEC) php bin/phpunit
 
 ## —— Qualite ——————————————————————————————————
 

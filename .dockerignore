@@ -9,7 +9,7 @@ var/log
 vendor
 .env.local
 .env.*.local
-docker-compose*.yml
-Caddyfile
 *.md
 !README.md
+docker-compose*.yml
+compose*.yaml

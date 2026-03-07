@@ -1,13 +1,12 @@
 {
 	frankenphp {
 		worker {
-			file /app/public/index.php
-			num {env.FRANKENPHP_WORKERS}
+			file ./public/index.php
+			num {$FRANKENPHP_WORKERS:4}
 			env APP_RUNTIME Runtime\FrankenPhpSymfony\Runtime
 		}
 	}
 
-	# Prod behind Caddy reverse proxy: no auto HTTPS
 	auto_https off
 	http_port 8080
 }
@@ -36,13 +35,13 @@
 	}
 
 	# Static assets with immutable cache
-	@static {
-		file
-		path *.css *.js *.ico *.jpg *.jpeg *.png *.svg *.gif *.webp *.woff *.woff2 *.ttf *.eot
-	}
 	@versioned {
 		file
 		path_regexp \.[\da-f]{8}\.(css|js)$
+	}
+	@static {
+		file
+		path *.css *.js *.ico *.jpg *.jpeg *.png *.svg *.gif *.webp *.woff *.woff2 *.ttf *.eot
 	}
 	handle @versioned {
 		header Cache-Control "public, max-age=31536000, immutable"
@@ -53,8 +52,7 @@
 		file_server
 	}
 
-	# 103 Early Hints for better performance
-	push
-
-	php_server
+	php_server {
+		resolve_root_symlink false
+	}
 }
