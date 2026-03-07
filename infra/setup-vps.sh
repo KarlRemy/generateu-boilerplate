@@ -3,8 +3,7 @@
 # setup-vps.sh - One-time VPS initialisation (idempotent)
 #
 # Target host : 91.134.132.141  (karl-remy.fr)
-# Reverse proxy: Caddy (same stack as FrankenPHP)
-# SSL          : Let's Encrypt wildcard via Certbot + OVH DNS plugin
+# Reverse proxy: Caddy (TLS automatique via ACME/Let's Encrypt)
 # =============================================================================
 set -euo pipefail
 
@@ -49,18 +48,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 4. Install Certbot with OVH DNS plugin (wildcard SSL)
-# ---------------------------------------------------------------------------
-if command -v certbot &>/dev/null; then
-    success "Certbot already installed."
-else
-    info "Installing Certbot + OVH DNS plugin ..."
-    apt-get install -y certbot python3-certbot-dns-ovh
-    success "Certbot installed."
-fi
-
-# ---------------------------------------------------------------------------
-# 5. Install jq and GitHub CLI
+# 4. Install jq and GitHub CLI
 # ---------------------------------------------------------------------------
 if command -v jq &>/dev/null; then
     success "jq already installed."
@@ -84,7 +72,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 6. Create directory structure
+# 5. Create directory structure
 # ---------------------------------------------------------------------------
 info "Creating directory structure ..."
 mkdir -p /opt/generateu/{shared,projects}
@@ -93,7 +81,7 @@ mkdir -p /var/log/caddy
 success "Directories ready."
 
 # ---------------------------------------------------------------------------
-# 7. Create Caddyfile
+# 6. Create Caddyfile (TLS automatique par Caddy)
 # ---------------------------------------------------------------------------
 info "Writing /etc/caddy/Caddyfile ..."
 cat > /etc/caddy/Caddyfile <<'CADDYFILE'
@@ -106,13 +94,12 @@ import /opt/generateu/shared/caddy/*.caddy
 CADDYFILE
 success "Caddyfile written."
 
-# Enable and start Caddy
 systemctl enable caddy
 systemctl restart caddy
 success "Caddy enabled and started."
 
 # ---------------------------------------------------------------------------
-# 8. Shared services (PostgreSQL + Mailpit)
+# 7. Shared services (PostgreSQL + Mailpit)
 # ---------------------------------------------------------------------------
 info "Starting shared services (PostgreSQL, Mailpit) ..."
 if [[ ! -f /opt/generateu/shared/docker-compose.shared.yml ]]; then
@@ -123,7 +110,7 @@ docker compose -f docker-compose.shared.yml up -d
 success "Shared services running."
 
 # ---------------------------------------------------------------------------
-# 9. Docker network
+# 8. Docker network
 # ---------------------------------------------------------------------------
 if docker network inspect generateu_network &>/dev/null; then
     success "Docker network 'generateu_network' already exists."
@@ -133,12 +120,11 @@ else
     success "Docker network created."
 fi
 
-# Connect shared containers to the network (ignore errors if already connected)
 docker network connect generateu_network generateu_postgres 2>/dev/null || true
 docker network connect generateu_network generateu_mailpit 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
-# 10. Firewall
+# 9. Firewall
 # ---------------------------------------------------------------------------
 info "Configuring firewall ..."
 ufw allow OpenSSH
@@ -148,27 +134,7 @@ ufw --force enable
 success "Firewall configured (SSH, HTTP, HTTPS)."
 
 # ---------------------------------------------------------------------------
-# 11. OVH credentials template
-# ---------------------------------------------------------------------------
-OVH_CREDS="/root/.ovh-credentials"
-if [[ ! -f "$OVH_CREDS" ]]; then
-    info "Creating OVH credentials template at ${OVH_CREDS} ..."
-    cat > "$OVH_CREDS" <<'OVH'
-# OVH API credentials for Certbot DNS challenge
-# Generate at: https://eu.api.ovh.com/createToken/
-dns_ovh_endpoint = ovh-eu
-dns_ovh_application_key = YOUR_APP_KEY
-dns_ovh_application_secret = YOUR_APP_SECRET
-dns_ovh_consumer_key = YOUR_CONSUMER_KEY
-OVH
-    chmod 600 "$OVH_CREDS"
-    success "OVH credentials template created."
-else
-    success "OVH credentials file already exists."
-fi
-
-# ---------------------------------------------------------------------------
-# 12. Initialise project registry
+# 10. Initialise project registry
 # ---------------------------------------------------------------------------
 registry_init
 
@@ -182,21 +148,12 @@ echo -e "${GREEN}============================================${RESET}"
 echo ""
 echo -e "${BOLD}Next steps:${RESET}"
 echo ""
-echo "1. Edit OVH API credentials:"
-echo "     nano /root/.ovh-credentials"
-echo ""
-echo "2. Request wildcard certificate:"
-echo "     certbot certonly \\"
-echo "       --dns-ovh \\"
-echo "       --dns-ovh-credentials /root/.ovh-credentials \\"
-echo "       --dns-ovh-propagation-seconds 60 \\"
-echo "       -d 'karl-remy.fr' \\"
-echo "       -d '*.karl-remy.fr'"
-echo ""
-echo "3. Add DNS records at OVH:"
+echo "1. Add DNS records:"
 echo "     A    *.karl-remy.fr  ->  91.134.132.141"
 echo "     A    karl-remy.fr    ->  91.134.132.141"
 echo ""
-echo "4. Authenticate GitHub CLI:"
+echo "2. Authenticate GitHub CLI:"
 echo "     gh auth login"
+echo ""
+echo "Caddy gerera automatiquement les certificats SSL via Let's Encrypt."
 echo ""

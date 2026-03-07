@@ -35,10 +35,9 @@ if [[ ! "$PROJECT_NAME" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?$ ]]; then
 fi
 
 PROJECT_DIR="${PROJECTS_DIR}/${PROJECT_NAME}"
-# Convert hyphens to underscores for PostgreSQL identifiers
 DB_NAME="db_${PROJECT_NAME//-/_}"
 DB_USER="user_${PROJECT_NAME//-/_}"
-CONTAINER_NAME="${PROJECT_NAME}-app"
+CONTAINER_NAME="${PROJECT_NAME}_app"
 GITHUB_URL="https://github.com/${GITHUB_ORG}/${PROJECT_NAME}"
 
 # ---------------------------------------------------------------------------
@@ -78,14 +77,9 @@ success "Repository created and cloned to ${PROJECT_DIR}."
 DB_PASSWORD=$(generate_password)
 
 info "Creating PostgreSQL database '${DB_NAME}' and user '${DB_USER}' ..."
-docker exec generateu_postgres psql -U generateu_root -c \
-    "CREATE DATABASE ${DB_NAME};"
-docker exec generateu_postgres psql -U generateu_root -c \
-    "CREATE USER ${DB_USER} WITH PASSWORD '${DB_PASSWORD}';"
-docker exec generateu_postgres psql -U generateu_root -c \
-    "GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};"
-docker exec generateu_postgres psql -U generateu_root -d "${DB_NAME}" -c \
-    "GRANT ALL ON SCHEMA public TO ${DB_USER};"
+sudo -u postgres psql -c "CREATE USER ${DB_USER} WITH PASSWORD '${DB_PASSWORD}';"
+sudo -u postgres psql -c "CREATE DATABASE ${DB_NAME} OWNER ${DB_USER};"
+sudo -u postgres psql -d "${DB_NAME}" -c "GRANT ALL ON SCHEMA public TO ${DB_USER};"
 success "Database ready."
 
 # ---------------------------------------------------------------------------
@@ -95,19 +89,24 @@ APP_SECRET=$(generate_secret 32)
 MERCURE_JWT_SECRET=$(generate_secret 32)
 
 # ---------------------------------------------------------------------------
-# 5. Write .env.prod.local
+# 5. Write .env for docker-compose variables
 # ---------------------------------------------------------------------------
-info "Writing .env.prod.local ..."
+info "Writing environment files ..."
+cat > "${PROJECT_DIR}/.env" <<ENV
+PROJECT_NAME=${PROJECT_NAME}
+APP_PORT=${PORT}
+ENV
+
 cat > "${PROJECT_DIR}/.env.prod.local" <<ENV
 APP_ENV=prod
 APP_SECRET=${APP_SECRET}
-DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@generateu_postgres:5432/${DB_NAME}?serverVersion=16&charset=utf8
+DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@host.docker.internal:5432/${DB_NAME}?serverVersion=17&charset=utf8
 MERCURE_JWT_SECRET=${MERCURE_JWT_SECRET}
 MERCURE_URL=https://${PROJECT_NAME}.${DOMAIN}/.well-known/mercure
 MERCURE_PUBLIC_URL=https://${PROJECT_NAME}.${DOMAIN}/.well-known/mercure
 MAILER_DSN=smtp://generateu_mailpit:1025
 ENV
-success ".env.prod.local written."
+success "Environment files written."
 
 # ---------------------------------------------------------------------------
 # 6. Build and start Docker containers
@@ -121,8 +120,8 @@ info "Starting containers ..."
 docker compose -f docker-compose.prod.yml up -d
 success "Containers started."
 
-# Wait a few seconds for the app to be ready
-sleep 5
+info "Waiting for app to be ready ..."
+sleep 8
 
 # ---------------------------------------------------------------------------
 # 7. Run migrations
@@ -149,11 +148,11 @@ sed -e "s/PROJECT_NAME/${PROJECT_NAME}/g" \
 success "Caddy config written."
 
 # ---------------------------------------------------------------------------
-# 10. Reload Caddy
+# 10. Reload FrankenPHP (gere les sous-domaines via import dans le Caddyfile)
 # ---------------------------------------------------------------------------
-info "Reloading Caddy ..."
-systemctl reload caddy
-success "Caddy reloaded."
+info "Reloading FrankenPHP ..."
+systemctl reload frankenphp 2>/dev/null || systemctl restart frankenphp 2>/dev/null || systemctl restart caddy 2>/dev/null
+success "Reverse proxy reloaded."
 
 # ---------------------------------------------------------------------------
 # 11. Update registry
@@ -174,4 +173,5 @@ echo -e "  ${BOLD}URL:${RESET}    https://${PROJECT_NAME}.${DOMAIN}"
 echo -e "  ${BOLD}Port:${RESET}   ${PORT}"
 echo -e "  ${BOLD}GitHub:${RESET} ${GITHUB_URL}"
 echo -e "  ${BOLD}DB:${RESET}     ${DB_NAME}"
+echo -e "  ${BOLD}Admin:${RESET}  admin@example.com / password"
 echo ""

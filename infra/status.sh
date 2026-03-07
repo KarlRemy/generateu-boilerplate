@@ -77,17 +77,30 @@ echo ""
 echo -e "${BOLD}Shared Services${RESET}"
 echo "--------------------------------------------------------------"
 
-for svc in generateu_postgres generateu_mailpit; do
-    if docker inspect --format='{{.State.Status}}' "$svc" &>/dev/null; then
-        svc_status=$(docker inspect --format='{{.State.Status}}' "$svc" 2>/dev/null)
-        if [[ "$svc_status" == "running" ]]; then
-            echo -e "  ${svc}:  ${GREEN}running${RESET}"
-        else
-            echo -e "  ${svc}:  ${RED}${svc_status}${RESET}"
-        fi
+# PostgreSQL (natif)
+if systemctl is-active --quiet postgresql; then
+    echo -e "  postgresql:  ${GREEN}running${RESET}"
+else
+    echo -e "  postgresql:  ${RED}stopped${RESET}"
+fi
+
+# Mailpit (Docker)
+if docker inspect --format='{{.State.Status}}' generateu_mailpit &>/dev/null; then
+    svc_status=$(docker inspect --format='{{.State.Status}}' generateu_mailpit 2>/dev/null)
+    if [[ "$svc_status" == "running" ]]; then
+        echo -e "  generateu_mailpit:  ${GREEN}running${RESET}"
     else
-        echo -e "  ${svc}:  ${RED}not found${RESET}"
+        echo -e "  generateu_mailpit:  ${RED}${svc_status}${RESET}"
     fi
-done
+else
+    echo -e "  generateu_mailpit:  ${RED}not found${RESET}"
+fi
+
+# Caddy
+if systemctl is-active --quiet caddy; then
+    echo -e "  caddy:  ${GREEN}running${RESET}"
+else
+    echo -e "  caddy:  ${RED}stopped${RESET}"
+fi
 
 echo ""

@@ -1,6 +1,4 @@
 PROJECT_NAME.karl-remy.fr {
-    tls /etc/letsencrypt/live/karl-remy.fr/fullchain.pem /etc/letsencrypt/live/karl-remy.fr/privkey.pem
-
     reverse_proxy localhost:PROJECT_PORT {
         flush_interval -1
     }

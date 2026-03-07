@@ -63,10 +63,8 @@ fi
 # 3. Drop database and user
 # ---------------------------------------------------------------------------
 info "Dropping database '${DB_NAME}' and user '${DB_USER}' ..."
-docker exec generateu_postgres psql -U generateu_root -c \
-    "DROP DATABASE IF EXISTS ${DB_NAME};" 2>/dev/null || warn "Could not drop database."
-docker exec generateu_postgres psql -U generateu_root -c \
-    "DROP USER IF EXISTS ${DB_USER};" 2>/dev/null || warn "Could not drop user."
+sudo -u postgres psql -c "DROP DATABASE IF EXISTS ${DB_NAME};" 2>/dev/null || warn "Could not drop database."
+sudo -u postgres psql -c "DROP USER IF EXISTS ${DB_USER};" 2>/dev/null || warn "Could not drop user."
 success "Database resources cleaned up."
 
 # ---------------------------------------------------------------------------
@@ -82,9 +80,9 @@ fi
 # ---------------------------------------------------------------------------
 # 5. Reload Caddy
 # ---------------------------------------------------------------------------
-info "Reloading Caddy ..."
-systemctl reload caddy
-success "Caddy reloaded."
+info "Reloading reverse proxy ..."
+systemctl reload frankenphp 2>/dev/null || systemctl restart frankenphp 2>/dev/null || systemctl restart caddy 2>/dev/null
+success "Reverse proxy reloaded."
 
 # ---------------------------------------------------------------------------
 # 6. Update registry

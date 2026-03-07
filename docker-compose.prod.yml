@@ -13,6 +13,8 @@ services:
       SERVER_NAME: ":8080"
       FRANKENPHP_WORKERS: ${FRANKENPHP_WORKERS:-4}
     restart: always
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - generateu_network
     healthcheck:

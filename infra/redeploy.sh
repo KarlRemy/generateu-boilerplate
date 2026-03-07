@@ -23,7 +23,7 @@ fi
 
 PROJECT_NAME="$1"
 PROJECT_DIR="${PROJECTS_DIR}/${PROJECT_NAME}"
-CONTAINER_NAME="${PROJECT_NAME}-app"
+CONTAINER_NAME="${PROJECT_NAME}_app"
 
 # ---------------------------------------------------------------------------
 # Pre-flight checks

@@ -1,31 +1,11 @@
 ###############################################################################
 # docker-compose.shared.yml - Shared infrastructure services
 #
-# PostgreSQL 16 + PostGIS  &  Mailpit (dev mail catcher)
+# PostgreSQL est installe nativement sur le VPS (port 5432).
+# Chaque projet a sa propre base, creee par deploy.sh.
 ###############################################################################
 
 services:
-  postgres:
-    image: postgis/postgis:16-3.4-alpine
-    container_name: generateu_postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: generateu_root
-      POSTGRES_PASSWORD: "${POSTGRES_ROOT_PASSWORD:-generateu_root_password}"
-      POSTGRES_DB: generateu
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U generateu_root -d generateu"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    networks:
-      - generateu_network
-
   mailpit:
     image: axllent/mailpit:latest
     container_name: generateu_mailpit
@@ -35,9 +15,6 @@ services:
       - "1025:1025"   # SMTP
     networks:
       - generateu_network
-
-volumes:
-  postgres_data:
 
 networks:
   generateu_network:

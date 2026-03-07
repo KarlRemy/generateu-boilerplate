@@ -37,17 +37,17 @@ Le format du template est documente dans `infra/project-template.yaml`.
 Se connecter au VPS et executer le script de deploiement :
 
 ```bash
-# Connexion au VPS
-ssh ubuntu@91.134.132.141
+# 1. Synchroniser les scripts infra sur le VPS
+scp -r infra/ ubuntu@91.134.132.141:/tmp/generateu-infra/
 
-# Executer le script de deploiement
+# 2. Executer le script de deploiement
 # Le script va :
-# - Cloner le repo du boilerplate
-# - Creer la base de donnees PostgreSQL
+# - Cloner le repo du boilerplate depuis GitHub
+# - Creer la base de donnees PostgreSQL (natif sur le VPS)
 # - Configurer les variables d'environnement
-# - Build et demarrer les containers Docker
-# - Configurer le sous-domaine dans Caddy
-sudo bash /home/ubuntu/generateu-symfony/infra/deploy.sh <nom-du-projet>
+# - Build et demarrer le container Docker (FrankenPHP)
+# - Configurer le sous-domaine dans le reverse proxy
+ssh ubuntu@91.134.132.141 "sudo bash /tmp/generateu-infra/infra/deploy.sh <nom-du-projet>"
 ```
 
 ### 4. Generer le code a partir du template (si fourni)
@@ -139,8 +139,7 @@ git push origin main
 ### 5. Redeployer avec le nouveau code
 
 ```bash
-ssh ubuntu@91.134.132.141
-sudo bash /home/ubuntu/<nom-du-projet>/infra/redeploy.sh
+ssh ubuntu@91.134.132.141 "sudo bash /tmp/generateu-infra/infra/redeploy.sh <nom-du-projet>"
 ```
 
 ### 6. Afficher le resultat
