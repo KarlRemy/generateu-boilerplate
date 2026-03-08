@@ -67,9 +67,13 @@ info "Assigned port ${PORT} to project '${PROJECT_NAME}'."
 info "Creating GitHub repository from template ..."
 gh repo create "${GITHUB_ORG}/${PROJECT_NAME}" \
     --template "$TEMPLATE_REPO" \
-    --public \
-    --clone "$PROJECT_DIR"
-success "Repository created and cloned to ${PROJECT_DIR}."
+    --public
+success "Repository created."
+
+info "Cloning repository ..."
+sleep 3
+gh repo clone "${GITHUB_ORG}/${PROJECT_NAME}" "$PROJECT_DIR"
+success "Repository cloned to ${PROJECT_DIR}."
 
 # ---------------------------------------------------------------------------
 # 3. Create PostgreSQL database and user
