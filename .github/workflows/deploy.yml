@@ -1,0 +1,71 @@
+name: Deploy Project
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_name:
+        description: "Nom du projet (kebab-case)"
+        required: true
+        type: string
+      action:
+        description: "Action"
+        required: true
+        type: choice
+        options:
+          - deploy
+          - redeploy
+          - destroy
+          - status
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate project name
+        if: inputs.action != 'status'
+        run: |
+          if [[ ! "${{ inputs.project_name }}" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?$ ]]; then
+            echo "::error::Nom de projet invalide. Utiliser kebab-case (ex: mon-saas)"
+            exit 1
+          fi
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H 91.134.132.141 >> ~/.ssh/known_hosts
+
+      - name: Sync infra scripts
+        run: scp -r infra/ ubuntu@91.134.132.141:/tmp/generateu-infra/
+
+      - name: Deploy new project
+        if: inputs.action == 'deploy'
+        run: |
+          ssh ubuntu@91.134.132.141 "sudo bash /tmp/generateu-infra/infra/deploy.sh ${{ inputs.project_name }}"
+
+      - name: Redeploy project
+        if: inputs.action == 'redeploy'
+        run: |
+          ssh ubuntu@91.134.132.141 "sudo bash /tmp/generateu-infra/infra/redeploy.sh ${{ inputs.project_name }}"
+
+      - name: Destroy project
+        if: inputs.action == 'destroy'
+        run: |
+          ssh ubuntu@91.134.132.141 "sudo bash /tmp/generateu-infra/infra/destroy.sh ${{ inputs.project_name }} --confirm"
+
+      - name: Show status
+        if: inputs.action == 'status'
+        run: |
+          ssh ubuntu@91.134.132.141 "sudo bash /tmp/generateu-infra/infra/status.sh"
+
+      - name: Summary
+        if: inputs.action == 'deploy'
+        run: |
+          echo "## Projet deploye" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL** : https://${{ inputs.project_name }}.karl-remy.fr" >> $GITHUB_STEP_SUMMARY
+          echo "- **Admin** : https://${{ inputs.project_name }}.karl-remy.fr/admin" >> $GITHUB_STEP_SUMMARY
+          echo "- **Compte** : admin@example.com / password" >> $GITHUB_STEP_SUMMARY
