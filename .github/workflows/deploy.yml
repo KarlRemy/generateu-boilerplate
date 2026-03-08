@@ -4,8 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       project_name:
-        description: "Nom du projet (kebab-case)"
+        description: "Nom du projet (kebab-case, ex: app-factures)"
         required: true
+        type: string
+      project_description:
+        description: "Description du projet (ex: Gestion de factures pour freelances avec clients, devis et paiements)"
+        required: false
         type: string
       action:
         description: "Action"
@@ -19,12 +23,13 @@ on:
 
 jobs:
   deploy:
+    if: inputs.action == 'deploy'
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
       - name: Validate project name
-        if: inputs.action != 'status'
         run: |
           if [[ ! "${{ inputs.project_name }}" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?$ ]]; then
             echo "::error::Nom de projet invalide. Utiliser kebab-case (ex: mon-saas)"
@@ -41,31 +46,87 @@ jobs:
       - name: Sync infra scripts
         run: scp -r infra/ ubuntu@91.134.132.141:/tmp/generateu-infra/
 
-      - name: Deploy new project
-        if: inputs.action == 'deploy'
+      - name: Deploy boilerplate
         run: |
           ssh ubuntu@91.134.132.141 "sudo bash /tmp/generateu-infra/infra/deploy.sh ${{ inputs.project_name }}"
 
-      - name: Redeploy project
-        if: inputs.action == 'redeploy'
+      - name: Generate code with Claude
+        if: inputs.project_description != ''
+        run: |
+          ssh -o ServerAliveInterval=30 ubuntu@91.134.132.141 << 'REMOTE'
+          cd /opt/generateu/projects/${{ inputs.project_name }}
+
+          claude -p --dangerously-skip-permissions "
+          Tu es dans le repo du projet ${{ inputs.project_name }}.
+          C'est un projet Symfony 7.2 avec FrankenPHP, Tailwind CSS 4, API Platform.
+
+          Description du projet : ${{ inputs.project_description }}
+
+          A partir de cette description, genere :
+          1. Les entites Doctrine dans src/Entity/ (avec TimestampableTrait pour createdAt/updatedAt)
+          2. Les repositories dans src/Repository/
+          3. Les FormTypes dans src/Form/ (labels en francais)
+          4. Les controllers dans src/Controller/
+          5. Les templates Twig dans templates/ (Tailwind CSS 4, textes en francais avec accents)
+          6. La migration Doctrine avec php bin/console doctrine:migrations:diff
+
+          Conventions :
+          - Tous les textes visibles en FRANCAIS avec accents
+          - Un FormType par formulaire dans src/Form/
+          - Logique metier dans src/Service/
+          - Queries complexes dans les Repository
+          - Nommage : NomController, NomFormType, NomService
+
+          Quand tu as fini, fais :
+          git add -A
+          git commit -m 'feat: generate project from description'
+          git push origin main
+          "
+          REMOTE
+
+      - name: Redeploy with generated code
+        if: inputs.project_description != ''
         run: |
           ssh ubuntu@91.134.132.141 "sudo bash /tmp/generateu-infra/infra/redeploy.sh ${{ inputs.project_name }}"
 
-      - name: Destroy project
-        if: inputs.action == 'destroy'
-        run: |
-          ssh ubuntu@91.134.132.141 "sudo bash /tmp/generateu-infra/infra/destroy.sh ${{ inputs.project_name }} --confirm"
-
-      - name: Show status
-        if: inputs.action == 'status'
-        run: |
-          ssh ubuntu@91.134.132.141 "sudo bash /tmp/generateu-infra/infra/status.sh"
-
       - name: Summary
-        if: inputs.action == 'deploy'
         run: |
           echo "## Projet deploye" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- **URL** : https://${{ inputs.project_name }}.karl-remy.fr" >> $GITHUB_STEP_SUMMARY
           echo "- **Admin** : https://${{ inputs.project_name }}.karl-remy.fr/admin" >> $GITHUB_STEP_SUMMARY
           echo "- **Compte** : admin@example.com / password" >> $GITHUB_STEP_SUMMARY
+          if [ -n "${{ inputs.project_description }}" ]; then
+            echo "- **Code genere** par Claude a partir de : _${{ inputs.project_description }}_" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  manage:
+    if: inputs.action != 'deploy'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H 91.134.132.141 >> ~/.ssh/known_hosts
+
+      - name: Sync infra scripts
+        run: scp -r infra/ ubuntu@91.134.132.141:/tmp/generateu-infra/
+
+      - name: Redeploy
+        if: inputs.action == 'redeploy'
+        run: |
+          ssh ubuntu@91.134.132.141 "sudo bash /tmp/generateu-infra/infra/redeploy.sh ${{ inputs.project_name }}"
+
+      - name: Destroy
+        if: inputs.action == 'destroy'
+        run: |
+          ssh ubuntu@91.134.132.141 "sudo bash /tmp/generateu-infra/infra/destroy.sh ${{ inputs.project_name }} --confirm"
+
+      - name: Status
+        if: inputs.action == 'status'
+        run: |
+          ssh ubuntu@91.134.132.141 "sudo bash /tmp/generateu-infra/infra/status.sh"
