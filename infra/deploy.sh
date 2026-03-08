@@ -19,6 +19,16 @@ CADDY_CONF_DIR="/opt/generateu/shared/caddy"
 CADDY_TEMPLATE="${SCRIPT_DIR}/caddy/subdomain.caddy.template"
 
 # ---------------------------------------------------------------------------
+# GH_TOKEN check
+# ---------------------------------------------------------------------------
+if [[ -z "${GH_TOKEN:-}" ]]; then
+    error "GH_TOKEN is not set. Export a GitHub personal access token (repo scope):"
+    error "  export GH_TOKEN=\"ghp_...\""
+    exit 1
+fi
+export GH_TOKEN
+
+# ---------------------------------------------------------------------------
 # Argument validation
 # ---------------------------------------------------------------------------
 if [[ $# -lt 1 ]]; then
