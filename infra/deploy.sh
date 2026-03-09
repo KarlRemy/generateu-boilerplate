@@ -127,6 +127,7 @@ MERCURE_JWT_SECRET=${MERCURE_JWT_SECRET}
 MERCURE_URL=https://${PROJECT_NAME}.${DOMAIN}/.well-known/mercure
 MERCURE_PUBLIC_URL=https://${PROJECT_NAME}.${DOMAIN}/.well-known/mercure
 MAILER_DSN=smtp://generateu_mailpit:1025
+CORS_ORIGIN=https://${PROJECT_NAME}.${DOMAIN}
 ENV
 success "Environment files written."
 

@@ -31,7 +31,7 @@
 		anonymous
 		publisher_jwt {env.MERCURE_JWT_SECRET}
 		subscriber_jwt {env.MERCURE_JWT_SECRET}
-		cors_origins {env.CORS_ORIGIN}
+		cors_origins *
 	}
 
 	# Static assets with immutable cache
