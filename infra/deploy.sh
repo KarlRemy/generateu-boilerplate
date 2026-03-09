@@ -154,11 +154,8 @@ docker exec "${CONTAINER_NAME}" php bin/console doctrine:migrations:migrate --no
 success "Migrations applied."
 
 # ---------------------------------------------------------------------------
-# 8. Load fixtures
+# 8. Fixtures (skipped in prod - DoctrineFixturesBundle is dev-only)
 # ---------------------------------------------------------------------------
-info "Loading fixtures ..."
-docker exec "${CONTAINER_NAME}" php bin/console doctrine:fixtures:load --no-interaction
-success "Fixtures loaded."
 
 # ---------------------------------------------------------------------------
 # 9. Create Caddy reverse proxy config
