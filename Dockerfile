@@ -60,6 +60,7 @@ FROM frankenphp_base AS frankenphp_prod
 
 ENV APP_ENV=prod
 ENV APP_DEBUG=0
+ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy?serverVersion=17&charset=utf8"
 
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 

@@ -12,18 +12,22 @@ source "${SCRIPT_DIR}/lib/secrets.sh"
 source "${SCRIPT_DIR}/lib/registry.sh"
 
 DOMAIN="karl-remy.fr"
-GITHUB_ORG="karl-remy"
+GITHUB_ORG="KarlRemy"
 TEMPLATE_REPO="${GITHUB_ORG}/generateu-boilerplate"
 PROJECTS_DIR="/opt/generateu/projects"
 CADDY_CONF_DIR="/opt/generateu/shared/caddy"
 CADDY_TEMPLATE="${SCRIPT_DIR}/caddy/subdomain.caddy.template"
 
 # ---------------------------------------------------------------------------
-# GH_TOKEN check
+# GH_TOKEN - load from config file if not already set
 # ---------------------------------------------------------------------------
+GENERATEU_CONF="/opt/generateu/.env"
+if [[ -z "${GH_TOKEN:-}" && -f "$GENERATEU_CONF" ]]; then
+    source "$GENERATEU_CONF"
+fi
 if [[ -z "${GH_TOKEN:-}" ]]; then
-    error "GH_TOKEN is not set. Export a GitHub personal access token (repo scope):"
-    error "  export GH_TOKEN=\"ghp_...\""
+    error "GH_TOKEN is not set."
+    error "Store it once:  echo 'GH_TOKEN=ghp_...' | sudo tee /opt/generateu/.env"
     exit 1
 fi
 export GH_TOKEN
