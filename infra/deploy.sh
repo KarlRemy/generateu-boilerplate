@@ -110,15 +110,19 @@ MERCURE_JWT_SECRET=$(generate_secret 32)
 # 5. Write .env for docker-compose variables
 # ---------------------------------------------------------------------------
 info "Writing environment files ..."
-cat > "${PROJECT_DIR}/.env" <<ENV
-PROJECT_NAME=${PROJECT_NAME}
-APP_PORT=${PORT}
-ENV
+# Append docker-compose variables to the existing .env (don't overwrite Symfony defaults)
+sed -i "s/^PROJECT_NAME=.*/PROJECT_NAME=${PROJECT_NAME}/" "${PROJECT_DIR}/.env"
+if ! grep -q '^APP_PORT=' "${PROJECT_DIR}/.env"; then
+    echo "APP_PORT=${PORT}" >> "${PROJECT_DIR}/.env"
+else
+    sed -i "s/^APP_PORT=.*/APP_PORT=${PORT}/" "${PROJECT_DIR}/.env"
+fi
 
 cat > "${PROJECT_DIR}/.env.prod.local" <<ENV
 APP_ENV=prod
 APP_SECRET=${APP_SECRET}
 DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@host.docker.internal:5432/${DB_NAME}?serverVersion=17&charset=utf8
+DEFAULT_URI=https://${PROJECT_NAME}.${DOMAIN}
 MERCURE_JWT_SECRET=${MERCURE_JWT_SECRET}
 MERCURE_URL=https://${PROJECT_NAME}.${DOMAIN}/.well-known/mercure
 MERCURE_PUBLIC_URL=https://${PROJECT_NAME}.${DOMAIN}/.well-known/mercure

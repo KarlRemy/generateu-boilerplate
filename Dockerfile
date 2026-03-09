@@ -60,7 +60,16 @@ FROM frankenphp_base AS frankenphp_prod
 
 ENV APP_ENV=prod
 ENV APP_DEBUG=0
+# Dummy values for build-time cache:clear (overridden at runtime)
 ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy?serverVersion=17&charset=utf8"
+ENV DEFAULT_URI="https://localhost"
+ENV MERCURE_URL="https://localhost/.well-known/mercure"
+ENV MERCURE_PUBLIC_URL="https://localhost/.well-known/mercure"
+ENV MERCURE_JWT_SECRET="build-secret"
+ENV MAILER_DSN="null://null"
+ENV LOCK_DSN="flock"
+ENV ADMIN_EMAIL="admin@example.com"
+ENV APP_SECRET="build-secret"
 
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
